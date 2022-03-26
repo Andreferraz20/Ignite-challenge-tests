@@ -3,18 +3,17 @@ import {InMemoryUsersRepository} from "../../../users/repositories/in-memory/InM
 import {CreateStatementUseCase} from "./CreateStatementUseCase";
 import {InMemoryStatementsRepository} from "../../repositories/in-memory/InMemoryStatementsRepository";
 import {ICreateStatementDTO} from "./ICreateStatementDTO";
-
-
-let createUserUseCase: CreateUserUseCase;
-let createStatementUseCase: CreateStatementUseCase;
-let usersRepositoryInMemory: InMemoryUsersRepository;
-let statementsRepositoryInMemory: InMemoryStatementsRepository;
+import {User} from "../../../users/entities/User";
 
 enum OperationType {
   DEPOSIT = 'deposit',
   WITHDRAW = 'withdraw',
 }
 
+let createUserUseCase: CreateUserUseCase;
+let createStatementUseCase: CreateStatementUseCase;
+let usersRepositoryInMemory: InMemoryUsersRepository;
+let statementsRepositoryInMemory: InMemoryStatementsRepository;
 
 describe("Create Statement", ()=> {
 
@@ -25,28 +24,31 @@ describe("Create Statement", ()=> {
   })
 
   it("Should be able to create a Deposit Statement", async ()=> {
-    const user = await createUserUseCase.execute({
+    const user: User = await createUserUseCase.execute({
       name: "Name Test",
       password: "password",
       email: "emailtest@teste.com"
     })
 
+    if(!user.id){
+      throw new Error("User without id");
+    }
 
-    const statement: ICreateStatementDTO = {
-      // @ts-ignore
-      user_id: user.id,
+    /* Assim funciona
+    const createdStatement = await createStatementUseCase.execute({
+      user_id: "123456",
       amount: 900,
       type: OperationType.DEPOSIT,
       description: "deposit"
-    }
+    })
+     */
 
-    console.log(statement)
+    const createdStatement = await createStatementUseCase.execute({
+      user_id: user.id.toString(),
+      amount: 900,
+      type: OperationType.DEPOSIT,
+      description: "deposit"
+    })
 
-    const created_statement = await createStatementUseCase.execute({...statement})
-
-    console.log(created_statement)
   })
-
-
-
 })
