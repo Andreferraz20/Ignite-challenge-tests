@@ -4,6 +4,8 @@ import {CreateStatementUseCase} from "./CreateStatementUseCase";
 import {InMemoryStatementsRepository} from "../../repositories/in-memory/InMemoryStatementsRepository";
 import {ICreateStatementDTO} from "./ICreateStatementDTO";
 import {User} from "../../../users/entities/User";
+import {Statement} from "../../entities/Statement";
+import {CreateStatementError} from "./CreateStatementError";
 
 enum OperationType {
   DEPOSIT = 'deposit',
@@ -20,6 +22,7 @@ describe("Create Statement", ()=> {
   beforeEach(()=>{
     usersRepositoryInMemory = new InMemoryUsersRepository();
     createUserUseCase = new CreateUserUseCase(usersRepositoryInMemory);
+    statementsRepositoryInMemory = new InMemoryStatementsRepository();
     createStatementUseCase = new CreateStatementUseCase(usersRepositoryInMemory, statementsRepositoryInMemory);
   })
 
@@ -30,25 +33,58 @@ describe("Create Statement", ()=> {
       email: "emailtest@teste.com"
     })
 
-    if(!user.id){
-      throw new Error("User without id");
-    }
-
-    /* Assim funciona
     const createdStatement = await createStatementUseCase.execute({
-      user_id: "123456",
-      amount: 900,
-      type: OperationType.DEPOSIT,
-      description: "deposit"
-    })
-     */
-
-    const createdStatement = await createStatementUseCase.execute({
+      // @ts-ignore
       user_id: user.id.toString(),
       amount: 900,
       type: OperationType.DEPOSIT,
       description: "deposit"
     })
 
+    expect(createdStatement).toBeInstanceOf(Statement)
+  })
+
+  it("Should be able to create a Withdraw Statement", async ()=> {
+    const user: User = await createUserUseCase.execute({
+      name: "Name Test",
+      password: "password",
+      email: "emailtest@teste.com"
+    })
+
+    await createStatementUseCase.execute({
+      // @ts-ignore
+      user_id: user.id.toString(),
+      amount: 900,
+      type: OperationType.DEPOSIT,
+      description: "deposit"
+    })
+
+    const createdStatement = await createStatementUseCase.execute({
+      // @ts-ignore
+      user_id: user.id.toString(),
+      amount: 200,
+      type: OperationType.WITHDRAW,
+      description: "deposit"
+    })
+
+    expect(createdStatement).toBeInstanceOf(Statement)
+  })
+
+  it("Should not be able to create a Withdraw Statement with insuficient founds", async ()=> {
+    const user: User = await createUserUseCase.execute({
+      name: "Name Test",
+      password: "password",
+      email: "emailtest@teste.com"
+    })
+
+    await expect(async () => {
+      await createStatementUseCase.execute({
+        // @ts-ignore
+        user_id: user.id.toString(),
+        amount: 200,
+        type: OperationType.WITHDRAW,
+        description: "deposit"
+      })
+    }).rejects.toBeInstanceOf(CreateStatementError.InsufficientFunds)
   })
 })
